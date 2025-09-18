@@ -1,10 +1,921 @@
 import React, { useState, useEffect } from 'react';
-import { Github, Linkedin, Mail, ExternalLink, Code, Smartphone, Monitor, Star, GitBranch, Zap, Sparkles, Sun, Moon, Instagram, Database, Server, Globe, Shield, Cpu, Rocket, Brain, Bot, Clock, Users, Eye, Heart, TrendingUp, Lock, Wifi } from 'lucide-react';
+import { Github, Linkedin, Mail, Code, Smartphone, Monitor, Star, GitBranch, Zap, Sparkles, Sun, Moon, Instagram, Globe, Rocket, Users, Eye, Heart, CheckCircle, AlertCircle, Send, MessageCircle, Reply, User, Calendar, ThumbsUp, Server, Trophy, Award, ExternalLink, Download, BookOpen, Medal } from 'lucide-react';
+const CommentSection = ({ isDarkMode = true }) => {
+  const [comments, setComments] = useState(() => {
+    const savedComments = localStorage.getItem('portfolio-comments');
+    return savedComments ? JSON.parse(savedComments) : [
+      {
+        id: 1,
+        name: "Sarah Johnson",
+        email: "sarah@example.com",
+        message: "Your AI-powered e-commerce platform is absolutely incredible! The ML recommendations feature is mind-blowing. How long did it take you to implement the TensorFlow.js integration?",
+        timestamp: "2024-03-15T10:30:00Z",
+        likes: 12,
+        isLiked: false,
+        avatar: "SJ",
+        role: "Senior Frontend Developer",
+        replies: [
+          {
+            id: 101,
+            name: "Fayaz",
+            message: "Thanks Sarah! The TensorFlow.js integration took about 3 weeks to perfect. The trickiest part was optimizing the model for real-time inference in the browser.",
+            timestamp: "2024-03-15T11:15:00Z",
+            isOwner: true,
+            avatar: "F"
+          }
+        ]
+      },
+      {
+        id: 2,
+        name: "Mike Chen",
+        email: "mike@techstartup.com",
+        message: "The real-time collaboration suite is exactly what our team needs! The WebRTC implementation looks seamless. Are you available for freelance projects?",
+        timestamp: "2024-03-14T14:22:00Z",
+        likes: 8,
+        isLiked: true,
+        avatar: "MC",
+        role: "CTO at TechStartup",
+        replies: []
+      },
+      {
+        id: 3,
+        name: "Emma Rodriguez",
+        email: "emma@designstudio.com",
+        message: "Your portfolio design is stunning! The animations and gradients create such an immersive experience. What inspired your cyberpunk aesthetic?",
+        timestamp: "2024-03-13T09:45:00Z",
+        likes: 15,
+        isLiked: false,
+        avatar: "ER",
+        role: "UI/UX Designer",
+        replies: []
+      }
+    ];
+  });
+
+  const [newComment, setNewComment] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
+
+  // Function to clear all comments (for admin purposes)
+  const clearAllComments = () => {
+    if (window.confirm('Are you sure you want to clear all comments? This action cannot be undone.')) {
+      localStorage.removeItem('portfolio-comments');
+      setComments([]);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewComment(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async () => {
+    if (!newComment.name.trim() || !newComment.email.trim() || !newComment.message.trim()) {
+      setSubmitStatus('error');
+      setTimeout(() => setSubmitStatus(null), 3000);
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const comment = {
+        id: Date.now(),
+        ...newComment,
+        timestamp: new Date().toISOString(),
+        likes: 0,
+        isLiked: false,
+        avatar: newComment.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+        role: "Visitor",
+        replies: []
+      };
+      
+      setComments(prev => {
+        const updatedComments = [comment, ...prev];
+        localStorage.setItem('portfolio-comments', JSON.stringify(updatedComments));
+        return updatedComments;
+      });
+      setNewComment({ name: '', email: '', message: '' });
+      setSubmitStatus('success');
+      setTimeout(() => setSubmitStatus(null), 5000);
+    } catch (error) {
+      setSubmitStatus('error');
+      setTimeout(() => setSubmitStatus(null), 5000);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLike = (commentId) => {
+    setComments(prev => {
+      const updatedComments = prev.map(comment =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
+              isLiked: !comment.isLiked
+            }
+          : comment
+      );
+      localStorage.setItem('portfolio-comments', JSON.stringify(updatedComments));
+      return updatedComments;
+    });
+  };
+
+  const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const commentTime = new Date(timestamp);
+    const diffInHours = Math.floor((now - commentTime) / (1000 * 60 * 60));
+
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+    return `${Math.floor(diffInHours / 168)}w ago`;
+  };
+
+  // Add keyboard shortcut for clearing comments (Ctrl+Shift+C)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
+        e.preventDefault();
+        clearAllComments();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+  const CommentCard = ({ comment, index }) => (
+    <div className={`group ${isDarkMode ? 'bg-gray-900/50' : 'bg-white/80'} backdrop-blur-sm rounded-2xl p-6 border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-200/50'} hover:border-cyan-500/50 transition-all duration-500 relative overflow-hidden hover:shadow-[0_0_30px_rgba(6,182,212,0.2)] transform translate-y-0 opacity-100`} 
+         style={{ 
+           animation: `slideIn 0.6s ease-out ${index * 0.1}s both`
+         }}>
+      
+      {/* Background glow effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      
+      {/* Floating particles */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-cyan-400 rounded-full animate-pulse"
+            style={{
+              left: `${10 + Math.random() * 80}%`,
+              top: `${10 + Math.random() * 80}%`,
+              animationDelay: `${i * 0.3}s`,
+              animationDuration: '2s'
+            }}
+          />
+        ))}
+      </div>
+      
+      <div className="relative z-10">
+        <div className="flex items-start gap-4 mb-4">
+          {/* Avatar with gradient border */}
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 p-0.5 animate-pulse group-hover:animate-spin transition-all duration-1000">
+              <div className={`w-full h-full rounded-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} flex items-center justify-center text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                {comment.avatar}
+              </div>
+            </div>
+            {comment.isOwner && (
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-2 border-gray-900 flex items-center justify-center">
+                <Star size={10} className="text-white" />
+              </div>
+            )}
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} ${comment.isOwner ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500' : ''}`}>
+                {comment.name}
+                {comment.isOwner && (
+                  <span className="ml-2 text-xs bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-2 py-1 rounded-full animate-pulse">
+                    Owner
+                  </span>
+                )}
+              </h4>
+              <span className="text-xs text-cyan-400 animate-pulse">{comment.role}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+              <Calendar size={12} />
+              <span>{formatTimeAgo(comment.timestamp)}</span>
+            </div>
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} leading-relaxed group-hover:${isDarkMode ? 'text-gray-100' : 'text-gray-900'} transition-colors duration-300`}>
+              {comment.message}
+            </p>
+          </div>
+        </div>
+        
+        {/* Action buttons */}
+        <div className="flex items-center gap-4 mt-4">
+          <button
+            onClick={() => handleLike(comment.id)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 hover:scale-105 ${
+              comment.isLiked 
+                ? 'bg-red-500/20 text-red-400 border border-red-500/30' 
+                : `${isDarkMode ? 'bg-gray-800/50 text-gray-400 hover:text-red-400' : 'bg-gray-200/50 text-gray-600 hover:text-red-500'} border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-300/50'} hover:border-red-500/30`
+            }`}
+          >
+            <Heart size={14} className={comment.isLiked ? 'fill-current animate-pulse' : ''} />
+            <span className="text-sm font-medium">{comment.likes}</span>
+          </button>
+          
+          <button
+            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300 hover:scale-105 ${isDarkMode ? 'bg-gray-800/50 text-gray-400 hover:text-cyan-400' : 'bg-gray-200/50 text-gray-600 hover:text-cyan-500'} border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-300/50'} hover:border-cyan-500/30`}
+          >
+            <Reply size={14} />
+            <span className="text-sm font-medium">Reply</span>
+          </button>
+          
+
+        </div>
+        
+        {/* Replies */}
+        {comment.replies && comment.replies.length > 0 && (
+          <div className="mt-6 pl-6 border-l-2 border-cyan-500/30 space-y-4">
+            {comment.replies.map((reply, replyIndex) => (
+              <div key={reply.id} className={`${isDarkMode ? 'bg-gray-800/30' : 'bg-gray-100/30'} backdrop-blur-sm rounded-xl p-4 border ${isDarkMode ? 'border-gray-600/30' : 'border-gray-300/30'}`}>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 p-0.5">
+                    <div className={`w-full h-full rounded-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} flex items-center justify-center text-xs font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {reply.avatar}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`font-medium text-sm ${reply.isOwner ? 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500' : isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {reply.name}
+                      </span>
+                      {reply.isOwner && (
+                        <span className="text-xs bg-gradient-to-r from-cyan-500 to-purple-500 text-white px-2 py-1 rounded-full animate-pulse">
+                          Owner
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {reply.message}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {/* Reply form */}
+        {replyingTo === comment.id && (
+          <div className="mt-4 pl-6 border-l-2 border-cyan-500/30">
+            <div className="flex gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center">
+                <User size={16} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Write a reply..."
+                  className={`w-full p-3 rounded-xl ${isDarkMode ? 'bg-gray-800/60' : 'bg-gray-100/60'} backdrop-blur-sm border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-300/50'} ${isDarkMode ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'} focus:outline-none focus:border-cyan-500/70 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300 resize-none`}
+                  rows="2"
+                />
+                <div className="flex gap-2 mt-2">
+                  <button className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-purple-600 text-white rounded-lg text-sm font-medium hover:from-cyan-500 hover:to-purple-500 transition-all duration-300 hover:scale-105">
+                    Reply
+                  </button>
+                  <button 
+                    onClick={() => setReplyingTo(null)}
+                    className={`px-4 py-2 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-300'} ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} rounded-lg text-sm font-medium hover:bg-gray-600 transition-all duration-300`}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+return (
+    <section className="relative z-10 py-20">
+      <div className="container mx-auto px-6">
+        <div className="max-w-4xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <h2 className="text-5xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent relative">
+                Community Feedback
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent blur-sm opacity-50 -z-10"></div>
+              </span>
+            </h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-cyan-500 to-purple-500 mx-auto mb-8 rounded-full animate-pulse"></div>
+            <p className={`text-xl ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-8 max-w-3xl mx-auto leading-relaxed`}>
+              Join the conversation! Share your thoughts about my projects, ask questions, or just say hello. 
+              <span className="text-cyan-400 font-semibold animate-pulse"> Your feedback drives innovation</span>!
+            </p>
+          </div>
+          
+          {/* Comment Form */}
+          <div className={`${isDarkMode ? 'bg-gray-900/50' : 'bg-white/80'} backdrop-blur-sm rounded-3xl p-8 md:p-12 border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-200/50'} hover:border-cyan-500/50 transition-all duration-500 shadow-2xl hover:shadow-cyan-500/20 relative overflow-hidden mb-12`}>
+            {/* Background Effects */}
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-pink-500/5 rounded-3xl animate-pulse"></div>
+            <div className="absolute inset-0 opacity-10">
+              {[...Array(12)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-1 h-1 bg-cyan-400 rounded-full animate-pulse"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    animationDelay: `${i * 0.5}s`,
+                    animationDuration: `${2 + Math.random() * 2}s`
+                  }}
+                />
+              ))}
+            </div>
+            
+            {/* Form Header */}
+            <div className="flex items-center gap-4 mb-8 relative z-10">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center animate-pulse shadow-lg shadow-cyan-500/25">
+                <MessageCircle className="text-white" size={24} />
+              </div>
+              <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                Leave a Comment
+              </h3>
+            </div>
+            
+            {/* Success/Error Messages */}
+            {submitStatus && (
+              <div className={`p-4 rounded-2xl border flex items-center gap-3 animate-pulse mb-6 relative z-10 ${
+                submitStatus === 'success' 
+                  ? 'bg-green-500/20 border-green-500/50 text-green-300' 
+                  : 'bg-red-500/20 border-red-500/50 text-red-300'
+              }`}>
+                {submitStatus === 'success' ? (
+                  <>
+                    <Sparkles size={20} className="animate-spin" />
+                    <span>Comment posted successfully! Thanks for your feedback.</span>
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle size={20} />
+                    <span>Please fill in all fields to post your comment.</span>
+                  </>
+                )}
+              </div>
+            )}
+            
+            {/* Comment Form */}
+            <div className="space-y-6 relative z-10">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="group">
+                  <input
+                    type="text"
+                    name="name"
+                    value={newComment.name}
+                    onChange={handleInputChange}
+                    placeholder="Your Name"
+                    className={`w-full p-4 rounded-2xl ${isDarkMode ? 'bg-gray-800/60' : 'bg-gray-100/60'} backdrop-blur-sm border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-300/50'} ${isDarkMode ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'} focus:outline-none focus:border-cyan-500/70 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300 group-hover:border-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                
+                <div className="group">
+                  <input
+                    type="email"
+                    name="email"
+                    value={newComment.email}
+                    onChange={handleInputChange}
+                    placeholder="Your Email"
+                    className={`w-full p-4 rounded-2xl ${isDarkMode ? 'bg-gray-800/60' : 'bg-gray-100/60'} backdrop-blur-sm border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-300/50'} ${isDarkMode ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'} focus:outline-none focus:border-cyan-500/70 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300 group-hover:border-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+              
+              <div className="group">
+                <textarea
+                  name="message"
+                  value={newComment.message}
+                  onChange={handleInputChange}
+                  placeholder="Share your thoughts, ask questions, or just say hello..."
+                  rows="5"
+                  className={`w-full p-4 rounded-2xl ${isDarkMode ? 'bg-gray-800/60' : 'bg-gray-100/60'} backdrop-blur-sm border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-300/50'} ${isDarkMode ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'} focus:outline-none focus:border-cyan-500/70 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300 resize-none group-hover:border-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed`}
+                  required
+                  disabled={isSubmitting}
+                ></textarea>
+              </div>
+              
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="group relative w-full flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-600 to-pink-600 hover:from-cyan-500 hover:to-pink-500 text-white p-4 rounded-2xl transition-all duration-500 hover:scale-[1.02] shadow-2xl shadow-cyan-500/25 hover:shadow-cyan-500/40 overflow-hidden font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                <span className="relative z-10 flex items-center gap-3">
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Posting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
+                      Post Comment
+                      <Sparkles className="w-5 h-5 group-hover:animate-spin transition-transform duration-300" />
+                    </>
+                  )}
+                </span>
+              </button>
+            </div>
+          </div>
+          
+          {/* Comments List */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} flex items-center gap-3`}>
+                <MessageCircle className="text-cyan-400 animate-pulse" size={28} />
+                Comments ({comments.length})
+              </h3>
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <ThumbsUp size={16} className="animate-pulse" />
+                <span>{comments.reduce((sum, c) => sum + c.likes, 0)} likes</span>
+              </div>
+            </div>
+            
+            {comments.map((comment, index) => (
+              <CommentCard key={comment.id} comment={comment} index={index} />
+            ))}
+            
+            {comments.length === 0 && (
+              <div className={`text-center py-16 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
+                <p className="text-xl">Be the first to leave a comment!</p>
+                <p className="text-sm mt-2">Share your thoughts and start the conversation.</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Stats Section */}
+          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { icon: MessageCircle, label: 'Comments', value: comments.length, color: 'cyan' },
+              { icon: Heart, label: 'Likes', value: comments.reduce((sum, c) => sum + c.likes, 0), color: 'red' },
+              { icon: User, label: 'Contributors', value: new Set(comments.map(c => c.name)).size, color: 'purple' },
+              { icon: Eye, label: 'Views', value: '2.5K', color: 'green' }
+            ].map((stat, index) => (
+              <div key={index} className={`text-center group hover:scale-105 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/50' : 'bg-white/80'} backdrop-blur-sm rounded-2xl p-6 border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-200/50'} hover:border-cyan-500/50 relative overflow-hidden`}>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <div className={`absolute inset-0 bg-gradient-to-r from-${stat.color}-500/10 to-${stat.color}-600/10 rounded-2xl animate-pulse`}></div>
+                </div>
+                <stat.icon className={`mx-auto mb-4 text-${stat.color}-400 animate-pulse`} size={32} />
+                <div className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2 group-hover:text-${stat.color}-400 transition-colors`}>{stat.value}</div>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+
+    </section>
+  );
+};
+
+
+const CertificatesSection = ({ isDarkMode = true }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [viewingCertificate, setViewingCertificate] = useState(null);
+
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+
+  const certificates = [
+    {
+      id: 1,
+      title: 'Meta Front-End Developer Certificate',
+      issuer: 'Meta (Facebook)',
+      issueDate: '2024-02-15',
+      credentialId: 'META-FED-2024-001',
+      description: 'Comprehensive program covering React, JavaScript, HTML/CSS, and modern front-end development practices with hands-on projects.',
+      skills: ['React', 'JavaScript', 'HTML/CSS', 'Version Control', 'UI/UX Design'],
+      verifyLink: 'https://coursera.org/verify/professional-cert/meta-frontend',
+      downloadLink: '#',
+      image: 'from-blue-500 via-purple-600 to-indigo-700',
+      icon: Code,
+      glowColor: 'blue',
+      level: 'Professional',
+      duration: '6 months',
+      projects: 4
+    },
+    {
+      id: 2,
+      title: 'Full Stack Web Development Bootcamp',
+      issuer: 'The Complete Web Developer Course',
+      issueDate: '2024-01-20',
+      credentialId: 'FSWD-2024-002',
+      description: 'Intensive bootcamp covering MERN stack, database design, authentication, deployment, and full-stack project development.',
+      skills: ['MERN Stack', 'MongoDB', 'Express.js', 'Node.js', 'API Development'],
+      verifyLink: 'https://udemy.com/certificate/fullstack-developer',
+      downloadLink: '#',
+      image: 'from-emerald-500 via-teal-600 to-cyan-700',
+      icon: Server,
+      glowColor: 'emerald',
+      level: 'Advanced',
+      duration: '12 months',
+      projects: 8
+    },
+    {
+      id: 3,
+      title: 'AWS Certified Cloud Practitioner',
+      issuer: 'Amazon Web Services',
+      issueDate: '2023-11-10',
+      credentialId: 'AWS-CCP-2023-003',
+      description: 'Foundational certification demonstrating cloud concepts, AWS services, security, architecture, and pricing models.',
+      skills: ['AWS Services', 'Cloud Computing', 'Security', 'Architecture', 'Cost Management'],
+      verifyLink: 'https://aws.amazon.com/verification/cloud-practitioner',
+      downloadLink: '#',
+      image: 'from-orange-500 via-amber-600 to-yellow-700',
+      icon: Globe,
+      glowColor: 'orange',
+      level: 'Foundational',
+      duration: '3 months',
+      projects: 2
+    }
+  ];
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  const getGlowClass = (color) => {
+    const glowMap = {
+      blue: 'shadow-[0_0_50px_rgba(59,130,246,0.3)] hover:shadow-[0_0_80px_rgba(59,130,246,0.5)]',
+      emerald: 'shadow-[0_0_50px_rgba(16,185,129,0.3)] hover:shadow-[0_0_80px_rgba(16,185,129,0.5)]',
+      orange: 'shadow-[0_0_50px_rgba(249,115,22,0.3)] hover:shadow-[0_0_80px_rgba(249,115,22,0.5)]',
+      red: 'shadow-[0_0_50px_rgba(239,68,68,0.3)] hover:shadow-[0_0_80px_rgba(239,68,68,0.5)]',
+      green: 'shadow-[0_0_50px_rgba(34,197,94,0.3)] hover:shadow-[0_0_80px_rgba(34,197,94,0.5)]',
+      purple: 'shadow-[0_0_50px_rgba(168,85,247,0.3)] hover:shadow-[0_0_80px_rgba(168,85,247,0.5)]'
+    };
+    return glowMap[color] || glowMap.blue;
+  };
+
+  const getLevelColor = (level) => {
+    const levelMap = {
+      'Foundational': 'bg-blue-500/20 border-blue-500/50 text-blue-300',
+      'Intermediate': 'bg-yellow-500/20 border-yellow-500/50 text-yellow-300',
+      'Advanced': 'bg-red-500/20 border-red-500/50 text-red-300',
+      'Professional': 'bg-purple-500/20 border-purple-500/50 text-purple-300'
+    };
+    return levelMap[level] || levelMap['Intermediate'];
+  };
+
+  const CertificateCard = ({ certificate, index }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    return (
+      <div 
+        className={`group relative ${isDarkMode ? 'bg-gray-900/50' : 'bg-white/80'} backdrop-blur-sm rounded-2xl overflow-hidden transition-all duration-700 hover:-translate-y-6 border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-200/50'} hover:border-cyan-500/50 transform ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-16 opacity-0'} ${getGlowClass(certificate.glowColor)}`}
+        style={{ transitionDelay: `${index * 200}ms` }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {/* Background glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-pink-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse"></div>
+        
+        {/* Level Badge */}
+        <div className="absolute top-4 left-4 z-20">
+          <div className={`px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm border ${getLevelColor(certificate.level)} animate-pulse`}>
+            {certificate.level}
+          </div>
+        </div>
+
+        {/* Duration Badge */}
+        <div className="absolute top-4 right-4 z-20">
+          <div className={`px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm border ${isDarkMode ? 'bg-gray-700/50 border-gray-600/50 text-gray-300' : 'bg-white/50 border-gray-300/50 text-gray-700'} animate-pulse`}>
+            {certificate.duration}
+          </div>
+        </div>
+        
+        {/* Header Section */}
+        <div className={`h-48 relative overflow-hidden bg-gradient-to-br ${certificate.image}`}>
+          <div className={`absolute inset-0 ${isDarkMode ? 'bg-black/40 group-hover:bg-black/20' : 'bg-white/40 group-hover:bg-white/20'} transition-all duration-500`} />
+          <div className={`absolute inset-0 ${isDarkMode ? 'bg-gradient-to-t from-black/60 to-transparent' : 'bg-gradient-to-t from-white/60 to-transparent'}`} />
+          
+          {/* Floating particles */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            {[...Array(10)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-2 h-2 bg-white rounded-full opacity-60"
+                style={{
+                  left: `${10 + Math.random() * 80}%`,
+                  top: `${10 + Math.random() * 80}%`,
+                  animationDelay: `${i * 0.2}s`,
+                  animation: `float 3s ease-in-out infinite ${i * 0.2}s`
+                }}
+              />
+            ))}
+          </div>
+          
+          {/* Main Icon */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center group-hover:scale-110 transition-all duration-500">
+              <certificate.icon className="text-white" size={40} />
+            </div>
+          </div>
+          
+          {/* Projects count */}
+          <div className="absolute bottom-4 right-4 flex items-center gap-2">
+            <div className={`${isDarkMode ? 'bg-black/70' : 'bg-white/70'} backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1 border border-cyan-500/50 animate-pulse`}>
+              <Trophy size={14} className="text-cyan-400" />
+              <span className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{certificate.projects} Projects</span>
+            </div>
+          </div>
+          
+          {/* Scanning line effect */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" 
+               style={{ animation: isHovered ? 'scan 2s linear infinite' : 'none' }}></div>
+        </div>
+        
+        {/* Content Section */}
+        <div className="p-6 relative">
+          {/* Title */}
+          <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-cyan-400 group-hover:to-purple-500 transition-all duration-500 flex items-center gap-2`}>
+            {certificate.title}
+            <Sparkles size={16} className="text-cyan-400 opacity-0 group-hover:opacity-100 animate-spin transition-opacity duration-500" />
+          </h3>
+          
+          {/* Issuer */}
+          <div className="flex items-center gap-2 mb-3">
+            <Award className="text-purple-400 animate-pulse" size={16} />
+            <span className={`font-semibold ${isDarkMode ? 'text-purple-300' : 'text-purple-600'}`}>
+              {certificate.issuer}
+            </span>
+          </div>
+          
+          {/* Issue Date */}
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="text-cyan-400" size={16} />
+            <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              Issued: {formatDate(certificate.issueDate)}
+            </span>
+          </div>
+          
+          {/* Description */}
+          <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-4 leading-relaxed text-sm group-hover:${isDarkMode ? 'text-gray-100' : 'text-gray-900'} transition-colors duration-300`}>
+            {certificate.description}
+          </p>
+          
+          {/* Skills */}
+          <div className="mb-4">
+            <p className="text-sm font-semibold text-cyan-400 mb-2 animate-pulse">Skills Acquired:</p>
+            <div className="flex flex-wrap gap-2">
+              {certificate.skills.map((skill, skillIndex) => (
+                <span
+                  key={skillIndex}
+                  className="bg-gradient-to-r from-purple-600/20 to-cyan-600/20 backdrop-blur-sm text-cyan-300 px-2 py-1 rounded-full text-xs font-medium border border-cyan-500/30 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300 hover:scale-105 cursor-default animate-pulse"
+                  style={{ animationDelay: `${skillIndex * 100}ms` }}
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewingCertificate(certificate)}
+              className="group/btn relative flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white px-4 py-2 rounded-xl transition-all duration-300 flex-1 justify-center shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/50 hover:scale-105 overflow-hidden text-sm font-semibold"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+              <ExternalLink size={14} className="relative z-10 group-hover/btn:rotate-12 transition-transform" />
+              <span className="relative z-10">View</span>
+            </button>
+            
+            <a
+              href={certificate.downloadLink}
+              className={`group/btn relative flex items-center gap-2 ${isDarkMode ? 'bg-gray-800/50 hover:bg-gray-700/50' : 'bg-gray-200/50 hover:bg-gray-300/50'} ${isDarkMode ? 'text-white' : 'text-gray-900'} px-4 py-2 rounded-xl transition-all duration-300 flex-1 justify-center border ${isDarkMode ? 'border-gray-600/50' : 'border-gray-300/50'} hover:shadow-lg hover:shadow-gray-500/25 overflow-hidden backdrop-blur-sm hover:scale-105 text-sm font-semibold`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+              <Download size={14} className="relative z-10 group-hover/btn:rotate-12 transition-transform" />
+              <span className="relative z-10">Download</span>
+            </a>
+          </div>
+        </div>
+        
+        {/* Floating glow orbs */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+          <div className="absolute top-1/4 left-1/4 w-4 h-4 bg-cyan-400/50 rounded-full blur-sm animate-ping"></div>
+          <div className="absolute top-3/4 right-1/4 w-6 h-6 bg-purple-400/30 rounded-full blur-md animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+          <div className="absolute bottom-1/4 left-3/4 w-3 h-3 bg-pink-400/40 rounded-full blur-sm animate-bounce" style={{ animationDelay: '1s' }}></div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <section className="relative z-10 py-20">
+      <div className="container mx-auto px-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header */}
+          <div className="text-center mb-16">
+            <h2 className="text-5xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent relative">
+                Certifications
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent blur-sm opacity-50 -z-10"></div>
+              </span>
+            </h2>
+            <div className="w-24 h-1 bg-gradient-to-r from-cyan-500 to-purple-500 mx-auto mb-8 rounded-full animate-pulse"></div>
+            <p className={`text-xl ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-8 max-w-3xl mx-auto leading-relaxed`}>
+              Continuously expanding my expertise through industry-recognized certifications and 
+              <span className="text-cyan-400 font-semibold animate-pulse"> professional development</span> programs.
+              <br />
+              Each certification represents <span className="text-purple-400 font-semibold animate-pulse">hands-on mastery</span> of cutting-edge technologies.
+            </p>
+          </div>
+          
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
+            {[
+              { icon: Award, label: 'Total Certificates', value: certificates.length, color: 'cyan', bg: 'bg-cyan-500/20' },
+              { icon: Trophy, label: 'Projects Completed', value: certificates.reduce((sum, cert) => sum + cert.projects, 0), color: 'yellow', bg: 'bg-yellow-500/20' },
+              { icon: BookOpen, label: 'Hours Studied', value: '800+', color: 'purple', bg: 'bg-purple-500/20' },
+              { icon: Medal, label: 'Skills Mastered', value: new Set(certificates.flatMap(cert => cert.skills)).size, color: 'green', bg: 'bg-green-500/20' }
+            ].map((stat, index) => (
+              <div key={index} className={`text-center group hover:scale-105 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/50' : 'bg-white/80'} backdrop-blur-sm rounded-2xl p-6 border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-200/50'} hover:border-cyan-500/50 relative overflow-hidden`}>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <div className={`absolute inset-0 bg-gradient-to-r from-${stat.color}-500/10 to-${stat.color}-600/10 rounded-2xl animate-pulse`}></div>
+                </div>
+                <div className={`mx-auto mb-4 p-3 rounded-full ${stat.bg} backdrop-blur-sm text-${stat.color}-400 group-hover:animate-pulse border border-current/30 w-fit`}>
+                  <stat.icon size={24} />
+                </div>
+                <div className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2 group-hover:text-${stat.color}-400 transition-colors`}>{stat.value}</div>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Certificates Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {certificates.map((certificate, index) => (
+              <CertificateCard key={certificate.id} certificate={certificate} index={index} />
+            ))}
+          </div>
+          
+          {/* Call to Action */}
+          <div className={`mt-16 text-center p-8 bg-gradient-to-r ${isDarkMode ? 'from-cyan-600/10 via-purple-600/10 to-pink-600/10' : 'from-cyan-600/5 via-purple-600/5 to-pink-600/5'} backdrop-blur-sm rounded-2xl border border-cyan-500/20 relative overflow-hidden`}>
+            <div className="absolute inset-0 opacity-10">
+              {[...Array(15)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-1 h-1 bg-white rounded-full animate-pulse"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    animationDelay: `${i * 0.3}s`,
+                    animationDuration: `${2 + Math.random() * 2}s`
+                  }}
+                />
+              ))}
+            </div>
+            
+            <div className="relative z-10">
+              <Zap className="mx-auto mb-4 text-cyan-400 animate-pulse" size={48} />
+              <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>
+                Continuous Learning Journey
+              </h3>
+              <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-6 text-lg max-w-2xl mx-auto`}>
+                Currently pursuing additional certifications in AI/ML, Cloud Architecture, and Advanced React patterns. 
+                <span className="text-cyan-400 font-semibold animate-pulse"> Knowledge never stops growing!</span>
+              </p>
+              
+              <div className="flex justify-center gap-4">
+                <div className="w-3 h-3 bg-cyan-400 rounded-full animate-bounce shadow-lg shadow-cyan-400/50"></div>
+                <div className="w-3 h-3 bg-purple-400 rounded-full animate-bounce shadow-lg shadow-purple-400/50" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-3 h-3 bg-pink-400 rounded-full animate-bounce shadow-lg shadow-pink-400/50" style={{ animationDelay: '0.4s' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Certificate Modal */}
+      {viewingCertificate && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setViewingCertificate(null)}>
+          <div className={`${isDarkMode ? 'bg-gray-900' : 'bg-white'} rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto border ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} shadow-2xl animate-pulse`} onClick={(e) => e.stopPropagation()}>
+            <div className={`h-64 bg-gradient-to-br ${viewingCertificate.image} relative flex items-center justify-center`}>
+              <div className="absolute inset-0 bg-black/40" />
+              <div className="relative z-10 text-center">
+                <viewingCertificate.icon size={80} className="text-white mx-auto mb-4" />
+                <h2 className="text-3xl font-bold text-white mb-2">{viewingCertificate.title}</h2>
+                <p className="text-white/80 text-lg">{viewingCertificate.issuer}</p>
+              </div>
+              <button 
+                onClick={() => setViewingCertificate(null)}
+                className="absolute top-4 right-4 text-white hover:text-gray-300 text-2xl w-10 h-10 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center transition-all"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="p-8">
+              <div className="grid md:grid-cols-2 gap-8">
+                <div>
+                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Certificate Details</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="text-cyan-400" size={20} />
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        Issued: {formatDate(viewingCertificate.issueDate)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Trophy className="text-yellow-400" size={20} />
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        Level: {viewingCertificate.level}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <BookOpen className="text-purple-400" size={20} />
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        Duration: {viewingCertificate.duration}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Medal className="text-green-400" size={20} />
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        Projects: {viewingCertificate.projects}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className={`text-xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Description</h3>
+                  <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} leading-relaxed mb-6`}>
+                    {viewingCertificate.description}
+                  </p>
+                  
+                  <h4 className={`font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-3`}>Skills Acquired</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {viewingCertificate.skills.map((skill, index) => (
+                      <span
+                        key={index}
+                        className="bg-gradient-to-r from-purple-600/20 to-cyan-600/20 backdrop-blur-sm text-cyan-300 px-3 py-1 rounded-full text-sm font-medium border border-cyan-500/30"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+
+    </section>
+  );
+};
+
 
 const Portfolio = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [formData, setFormData] = useState({
+  name: '',
+  email: '',
+  message: ''
+});
+const [isSubmitting, setIsSubmitting] = useState(false);
+const [submitStatus, setSubmitStatus] = useState(null);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -17,7 +928,56 @@ const Portfolio = () => {
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
-  };
+     };
+  const handleInputChange = (e) => {
+  const { name, value } = e.target;
+  setFormData(prev => ({
+    ...prev,
+    [name]: value
+  }));
+};
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  setSubmitStatus(null);
+  
+  try {
+    // 🔥 REPLACE 'YOUR_FORM_ID' WITH YOUR ACTUAL FORMSPREE FORM ID
+    const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mgvznzqn';
+    
+    const response = await fetch(FORMSPREE_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: formData.name,
+        email: formData.email,
+        message: formData.message,
+        _replyto: formData.email,
+        _subject: `Portfolio Contact from ${formData.name}`
+      })
+    });
+
+    if (response.ok) {
+      setSubmitStatus('success');
+      setFormData({ name: '', email: '', message: '' });
+      setTimeout(() => setSubmitStatus(null), 5000);
+    } else {
+      throw new Error('Failed to send email');
+    }
+    
+  } catch (error) {
+    console.error('Form submission error:', error);
+    setSubmitStatus('error');
+    setTimeout(() => setSubmitStatus(null), 5000);
+  } finally {
+    setIsSubmitting(false);
+  }
+  
+};
 
   const skills = [
     { name: 'React', level: 95, color: 'from-cyan-400 to-blue-500', neon: 'shadow-[0_0_30px_rgba(6,182,212,0.5)]' },
@@ -30,98 +990,53 @@ const Portfolio = () => {
     { name: 'Socket.io & WebRTC', level: 80, color: 'from-rose-400 to-red-500', neon: 'shadow-[0_0_30px_rgba(244,63,94,0.5)]' }
   ];
 
-  const projects = [
-    {
-      id: 1,
-      title: 'AI-Powered E-Commerce Platform',
-      description: 'Advanced MERN stack e-commerce with AI product recommendations, real-time chat support, blockchain payments, and advanced analytics dashboard. Features include ML-based inventory management and personalized shopping experiences.',
-      technologies: ['React', 'Node.js', 'MongoDB', 'TensorFlow.js', 'Socket.io', 'Stripe', 'Redis', 'AWS S3'],
-      role: 'Full Stack Lead Developer',
-      github: 'https://github.com/fayaz-username/ai-ecommerce-platform',
-      demo: 'https://ai-ecommerce-fayaz.vercel.app',
-      image: 'from-cyan-400 via-blue-500 to-purple-600',
-      stats: { stars: 156, forks: 42, views: 5200, users: '2.1K' },
-      features: ['AI Recommendations', 'Real-time Chat', 'Blockchain Payments', 'Advanced Analytics'],
-      techIcons: [Brain, Database, Shield, TrendingUp],
-      glowColor: 'cyan',
-      complexity: 'Advanced'
-    },
-    {
-      id: 2,
-      title: 'Real-Time Collaboration Suite',
-      description: 'Google Workspace alternative with real-time document editing, video conferencing, project management, and team communication. Built with microservices architecture and WebRTC for seamless collaboration.',
-      technologies: ['React', 'Node.js', 'WebRTC', 'Socket.io', 'MongoDB', 'Redis', 'Docker', 'Kubernetes'],
-      role: 'Senior Full Stack Developer',
-      github: 'https://github.com/fayaz-username/collaboration-suite',
-      demo: 'https://collab-suite-fayaz.netlify.app',
-      image: 'from-emerald-400 via-teal-500 to-cyan-600',
-      stats: { stars: 234, forks: 67, views: 8100, users: '3.4K' },
-      features: ['Real-time Editing', 'Video Conferencing', 'Project Management', 'Team Chat'],
-      techIcons: [Users, Wifi, Clock, Globe],
-      glowColor: 'emerald',
-      complexity: 'Expert'
-    },
-    {
-      id: 3,
-      title: 'Cryptocurrency Trading Bot',
-      description: 'Intelligent trading bot with machine learning algorithms, sentiment analysis, technical indicators, and portfolio optimization. Features automated trading strategies and comprehensive risk management.',
-      technologies: ['Python', 'React', 'FastAPI', 'TensorFlow', 'WebSocket', 'PostgreSQL', 'Celery', 'Docker'],
-      role: 'ML Engineer & Full Stack Developer',
-      github: 'https://github.com/fayaz-username/crypto-trading-bot',
-      demo: 'https://crypto-bot-fayaz.herokuapp.com',
-      image: 'from-yellow-400 via-orange-500 to-red-600',
-      stats: { stars: 312, forks: 89, views: 12500, users: '1.8K' },
-      features: ['ML Algorithms', 'Sentiment Analysis', 'Auto Trading', 'Risk Management'],
-      techIcons: [Bot, TrendingUp, Brain, Shield],
-      glowColor: 'yellow',
-      complexity: 'Expert'
-    },
-    {
-      id: 4,
-      title: 'Smart IoT Home Management',
-      description: 'Complete IoT ecosystem for smart homes with device control, energy monitoring, security systems, and AI-powered automation. Includes mobile app and voice control integration.',
-      technologies: ['React Native', 'Node.js', 'MQTT', 'InfluxDB', 'AWS IoT', 'TensorFlow', 'Raspberry Pi', 'Arduino'],
-      role: 'IoT Full Stack Developer',
-      github: 'https://github.com/fayaz-username/smart-home-iot',
-      demo: 'https://smart-home-fayaz.web.app',
-      image: 'from-purple-400 via-pink-500 to-rose-600',
-      stats: { stars: 198, forks: 54, views: 6800, users: '1.2K' },
-      features: ['Device Control', 'Energy Monitor', 'Security System', 'Voice Control'],
-      techIcons: [Cpu, Shield, Zap, Smartphone],
-      glowColor: 'purple',
-      complexity: 'Advanced'
-    },
-    {
-      id: 5,
-      title: 'Decentralized Social Network',
-      description: 'Blockchain-based social platform with end-to-end encryption, decentralized storage, NFT integration, and crypto rewards. Built on Ethereum with IPFS for content distribution.',
-      technologies: ['React', 'Solidity', 'Web3.js', 'IPFS', 'Node.js', 'MongoDB', 'Ethereum', 'MetaMask'],
-      role: 'Blockchain Full Stack Developer',
-      github: 'https://github.com/fayaz-username/decentralized-social',
-      demo: 'https://decentral-social-fayaz.vercel.app',
-      image: 'from-indigo-400 via-blue-500 to-purple-600',
-      stats: { stars: 278, forks: 76, views: 9200, users: '2.7K' },
-      features: ['Blockchain Security', 'NFT Integration', 'Crypto Rewards', 'Decentralized Storage'],
-      techIcons: [Lock, Globe, Heart, Star],
-      glowColor: 'indigo',
-      complexity: 'Expert'
-    },
-    {
-      id: 6,
-      title: 'AI Health Monitoring System',
-      description: 'Advanced healthcare platform with wearable device integration, AI diagnostics, telemedicine, and predictive health analytics. Features real-time health monitoring and emergency alerts.',
-      technologies: ['React', 'Python', 'TensorFlow', 'Node.js', 'WebRTC', 'MongoDB', 'AWS Lambda', 'IoT Sensors'],
-      role: 'HealthTech Full Stack Developer',
-      github: 'https://github.com/fayaz-username/ai-health-monitor',
-      demo: 'https://health-ai-fayaz.netlify.app',
-      image: 'from-green-400 via-emerald-500 to-teal-600',
-      stats: { stars: 189, forks: 43, views: 7100, users: '1.5K' },
-      features: ['AI Diagnostics', 'Wearable Integration', 'Telemedicine', 'Emergency Alerts'],
-      techIcons: [Heart, Brain, Monitor, Shield],
-      glowColor: 'green',
-      complexity: 'Advanced'
-    }
-  ];
+      const projects = [
+        {
+          id: 1,
+          title: 'AI-Powered E-Commerce Platform',
+          description: 'Advanced MERN stack e-commerce with AI product recommendations, real-time chat support, blockchain payments, and advanced analytics dashboard. Features include ML-based inventory management and personalized shopping experiences.',
+          technologies: ['React', 'Node.js', 'MongoDB', 'TensorFlow.js', 'Socket.io', 'Stripe', 'Redis', 'AWS S3'],
+          role: 'Full Stack Lead Developer',
+          github: 'https://github.com/fayaz-username/ai-ecommerce-platform',
+          demo: 'https://ai-ecommerce-fayaz.vercel.app',
+          image: 'from-cyan-400 via-blue-500 to-purple-600',
+          stats: { stars: 156, forks: 42, views: 5200, users: '2.1K' },
+          features: ['AI Recommendations', 'Real-time Chat', 'Blockchain Payments', 'Advanced Analytics'],
+          techIcons: [],
+          glowColor: 'cyan',
+          complexity: 'Advanced'
+        },
+        {
+          id: 2,
+          title: 'Real-Time Collaboration Suite',
+          description: 'Google Workspace alternative with real-time document editing, video conferencing, project management, and team communication. Built with microservices architecture and WebRTC for seamless collaboration.',
+          technologies: ['React', 'Node.js', 'WebRTC', 'Socket.io', 'MongoDB', 'Redis', 'Docker', 'Kubernetes'],
+          role: 'Senior Full Stack Developer',
+          github: 'https://github.com/fayaz-username/collaboration-suite',
+          demo: 'https://collab-suite-fayaz.netlify.app',
+          image: 'from-emerald-400 via-teal-500 to-cyan-600',
+          stats: { stars: 234, forks: 67, views: 8100, users: '3.4K' },
+          features: ['Real-time Editing', 'Video Conferencing', 'Project Management', 'Team Chat'],
+          techIcons: [],
+          glowColor: 'emerald',
+          complexity: 'Expert'
+        },
+        {
+          id: 3,
+          title: 'Cryptocurrency Trading Bot',
+          description: 'Intelligent trading bot with machine learning algorithms, sentiment analysis, technical indicators, and portfolio optimization. Features automated trading strategies and comprehensive risk management.',
+          technologies: ['Python', 'React', 'FastAPI', 'TensorFlow', 'WebSocket', 'PostgreSQL', 'Celery', 'Docker'],
+          role: 'ML Engineer & Full Stack Developer',
+          github: 'https://github.com/fayaz-username/crypto-trading-bot',
+          demo: 'https://crypto-bot-fayaz.herokuapp.com',
+          image: 'from-yellow-400 via-orange-500 to-red-600',
+          stats: { stars: 312, forks: 89, views: 12500, users: '1.8K' },
+          features: ['ML Algorithms', 'Sentiment Analysis', 'Auto Trading', 'Risk Management'],
+          techIcons: [],
+          glowColor: 'yellow',
+          complexity: 'Expert'
+        }
+      ];
 
   const ThemeToggle = () => (
     <button
@@ -397,7 +1312,7 @@ const Portfolio = () => {
           <nav className="flex justify-between items-center mb-12">
             <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-pulse relative">
               <span className="inline-block animate-bounce">&lt;</span>
-              Fayaz
+              WELLCOME TO MY PORTFOLIO
               <span className="inline-block animate-bounce" style={{ animationDelay: '0.1s' }}>/</span>
               <span className="inline-block animate-bounce" style={{ animationDelay: '0.2s' }}>&gt;</span>
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent blur-sm opacity-50 -z-10"></div>
@@ -406,10 +1321,19 @@ const Portfolio = () => {
 
           <div className="text-center">
             {/* Enhanced Profile Picture with multiple glow layers */}
-            <div className="w-40 h-40 mx-auto mb-8 relative group">
-              <div className="w-full h-full rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 p-1 shadow-2xl shadow-cyan-500/50 animate-pulse group-hover:animate-spin transition-all duration-1000 relative z-10">
+            <div className="w-48 h-48 mx-auto mb-8 relative group">
+              <div className="w-full h-full rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 p-1 shadow-2xl shadow-cyan-500/50 animate-pulse transition-all duration-1000 relative z-10">
                 <div className="w-full h-full rounded-full overflow-hidden bg-gray-800 flex items-center justify-center">
-                  <div className="w-full h-full bg-gradient-to-br from-slate-700 via-gray-800 to-slate-900 rounded-full flex items-center justify-center text-white text-6xl font-bold">
+              <img
+                    src="https://github.com/Fayaz-24.png"
+                    alt="Fayaz's GitHub Profile"
+                    className="w-full h-full rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                  <div className="w-full h-full bg-gradient-to-br from-slate-700 via-gray-800 to-slate-900 rounded-full flex items-center justify-center text-white text-6xl font-bold" style={{ display: 'none' }}>
                     F
                   </div>
                 </div>
@@ -420,9 +1344,7 @@ const Portfolio = () => {
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 blur-2xl opacity-25 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 blur-3xl opacity-15 animate-pulse" style={{ animationDelay: '1s' }}></div>
               
-              <div className={`absolute -bottom-2 -right-2 w-12 h-12 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full border-4 ${isDarkMode ? 'border-black' : 'border-white'} animate-bounce shadow-lg shadow-green-500/50 flex items-center justify-center`}>
-                <div className="w-4 h-4 rounded-full bg-green-300 animate-ping"></div>
-              </div>
+              
               
               {/* Orbiting elements with enhanced animations */}
               <div className="absolute inset-0" style={{ animation: 'spin 20s linear infinite' }}>
@@ -438,7 +1360,7 @@ const Portfolio = () => {
             
             <h1 className={`text-6xl md:text-7xl font-bold mb-6 transition-all duration-1000 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
               <span className={`${isDarkMode ? 'text-white' : 'text-gray-900'} relative`}>
-                Hello,
+                Hello, I'm Fayaz
                 <div className={`absolute inset-0 ${isDarkMode ? 'text-white' : 'text-gray-900'} blur-sm opacity-50 -z-10`}></div>
               </span>
               <br />
@@ -461,8 +1383,10 @@ const Portfolio = () => {
             
             <div className={`flex flex-wrap justify-center gap-4 mt-10 transition-all duration-1000 delay-500 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
               <a
-                href="#contact"
-                className="group relative flex items-center gap-3 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white px-8 py-4 rounded-full transition-all duration-500 hover:scale-110 shadow-lg shadow-cyan-600/50 hover:shadow-cyan-500/50 overflow-hidden font-bold text-lg"
+                href="/resumefai.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative flex items-center gap-3 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white px-10 py-5 rounded-full transition-all duration-500 hover:scale-110 shadow-lg shadow-cyan-600/50 hover:shadow-cyan-500/50 overflow-hidden font-bold text-xl"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                 <span className="relative z-10">Download Resume</span>
@@ -478,7 +1402,7 @@ const Portfolio = () => {
             
             <div className={`flex flex-wrap justify-center gap-4 mt-8 transition-all duration-1000 delay-700 ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
               <a
-                href="https://github.com/fayaz-username"
+                href="https://github.com/fayaz-24"
                 className={`group relative flex items-center gap-3 ${isDarkMode ? 'bg-gray-800/50 hover:bg-gray-700/50' : 'bg-white/50 hover:bg-gray-100/50'} ${isDarkMode ? 'text-white' : 'text-gray-900'} px-6 py-3 rounded-full transition-all duration-500 hover:scale-110 border ${isDarkMode ? 'border-gray-600/50' : 'border-gray-300/50'} shadow-lg shadow-gray-800/50 hover:shadow-gray-600/50 overflow-hidden backdrop-blur-sm`}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
@@ -486,7 +1410,7 @@ const Portfolio = () => {
                 <span className="relative z-10 font-bold">GitHub</span>
               </a>
               <a
-                href="https://linkedin.com/in/fayaz-username"
+                href="https://www.linkedin.com/in/fayaz024"
                 className="group relative flex items-center gap-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-6 py-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg shadow-blue-600/50 hover:shadow-blue-500/50 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
@@ -494,7 +1418,7 @@ const Portfolio = () => {
                 <span className="relative z-10 font-bold">LinkedIn</span>
               </a>
               <a
-                href="https://instagram.com/fayaz-username"
+                href="https://instagram.com/fayaz_crush._"
                 className="group relative flex items-center gap-3 bg-gradient-to-r from-pink-600 to-purple-700 hover:from-pink-500 hover:to-purple-600 text-white px-6 py-3 rounded-full transition-all duration-500 hover:scale-110 shadow-lg shadow-pink-600/50 hover:shadow-pink-500/50 overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
@@ -731,22 +1655,159 @@ const Portfolio = () => {
             </div>
             
             {/* Additional Project Stats */}
-            <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8">
-              {[
-                { icon: Code, label: 'Total Projects', value: '50+', color: 'cyan' },
-                { icon: Users, label: 'Active Users', value: '15K+', color: 'purple' },
-                { icon: Star, label: 'GitHub Stars', value: '1.2K+', color: 'yellow' },
-                { icon: Globe, label: 'Live Deployments', value: '25+', color: 'green' }
-              ].map((stat, index) => (
-                <div key={index} className={`text-center group hover:scale-105 transition-all duration-300 ${isDarkMode ? 'bg-gray-900/50' : 'bg-white/80'} backdrop-blur-sm rounded-2xl p-6 border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-200/50'} hover:border-cyan-500/50 relative overflow-hidden`}>
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <div className={`absolute inset-0 bg-gradient-to-r from-${stat.color}-500/10 to-${stat.color}-600/10 rounded-2xl animate-pulse`}></div>
-                  </div>
-                  <stat.icon className={`mx-auto mb-4 text-${stat.color}-400 animate-pulse`} size={32} />
-                  <div className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-2 group-hover:text-${stat.color}-400 transition-colors`}>{stat.value}</div>
-                  <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.label}</div>
+             <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8">
+             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Certificates Section */}
+      <CertificatesSection isDarkMode={isDarkMode} />
+
+ <CommentSection isDarkMode={isDarkMode} />
+
+      {/* Contact Form Section */}
+      <section className="relative z-10 py-20">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-5xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent relative">
+                  Inbox is Open — Let’s Build!
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent blur-sm opacity-50 -z-10"></div>
+                </span>
+              </h2>
+              <div className="w-24 h-1 bg-gradient-to-r from-cyan-500 to-purple-500 mx-auto mb-8 rounded-full animate-pulse"></div>
+              <p className={`text-xl ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-8 max-w-3xl mx-auto leading-relaxed`}>
+                Ready to collaborate on <span className="text-cyan-400 font-semibold animate-pulse">innovative projects</span>? 
+                Let's connect and create <span className="text-purple-400 font-semibold animate-pulse">extraordinary digital experiences</span> together!
+              </p>
+            </div>
+            
+            {/* Contact Form Card */}
+            <div className={`${isDarkMode ? 'bg-gray-900/50' : 'bg-white/80'} backdrop-blur-sm rounded-3xl p-8 md:p-12 border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-200/50'} hover:border-cyan-500/50 transition-all duration-500 shadow-2xl hover:shadow-cyan-500/20 relative overflow-hidden`}>
+              {/* Background Effects */}
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-purple-500/5 to-pink-500/5 rounded-3xl animate-pulse"></div>
+              <div className="absolute inset-0 opacity-10">
+                {[...Array(12)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-1 h-1 bg-cyan-400 rounded-full animate-pulse"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      animationDelay: `${i * 0.5}s`,
+                      animationDuration: `${2 + Math.random() * 2}s`
+                    }}
+                  />
+                ))}
+              </div>
+              
+              {/* Form Header */}
+              <div className="flex items-center gap-4 mb-8 relative z-10">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 flex items-center justify-center animate-pulse shadow-lg shadow-cyan-500/25">
+                  <Mail className="text-white" size={24} />
                 </div>
-              ))}
+                <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Send Me a Message
+                </h3>
+              </div>
+              
+              {/* Contact Form */}
+              <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                {/* Success/Error Messages */}
+                {submitStatus && (
+                  <div className={`p-4 rounded-2xl border flex items-center gap-3 animate-pulse ${
+                    submitStatus === 'success' 
+                      ? 'bg-green-500/20 border-green-500/50 text-green-300' 
+                      : 'bg-red-500/20 border-red-500/50 text-red-300'
+                  }`}>
+                    {submitStatus === 'success' ? (
+                      <>
+                        <CheckCircle size={20} />
+                        <span>Message sent successfully! I'll get back to you soon.</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle size={20} />
+                        <span>Failed to send message. Please try again or contact me directly.</span>
+                      </>
+                    )}
+                  </div>
+                )}
+                
+                {/* Name Input */}
+                <div className="group">
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Your Name"
+                    className={`w-full p-5 rounded-2xl ${isDarkMode ? 'bg-gray-800/60' : 'bg-gray-100/60'} backdrop-blur-sm border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-300/50'} ${isDarkMode ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'} focus:outline-none focus:border-cyan-500/70 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300 text-lg group-hover:border-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                
+                {/* Email Input */}
+                <div className="group">
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="Your Email"
+                    className={`w-full p-5 rounded-2xl ${isDarkMode ? 'bg-gray-800/60' : 'bg-gray-100/60'} backdrop-blur-sm border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-300/50'} ${isDarkMode ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'} focus:outline-none focus:border-cyan-500/70 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300 text-lg group-hover:border-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    required
+                    disabled={isSubmitting}
+                  />
+                </div>
+                
+                {/* Message Textarea */}
+                <div className="group">
+                  <textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    placeholder="Your Message"
+                    rows="6"
+                    className={`w-full p-5 rounded-2xl ${isDarkMode ? 'bg-gray-800/60' : 'bg-gray-100/60'} backdrop-blur-sm border ${isDarkMode ? 'border-gray-700/50' : 'border-gray-300/50'} ${isDarkMode ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'} focus:outline-none focus:border-cyan-500/70 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-300 text-lg resize-none group-hover:border-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    required
+                    disabled={isSubmitting}
+                  ></textarea>
+                </div>
+                
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="group relative w-full flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-600 to-pink-600 hover:from-cyan-500 hover:to-pink-500 text-white p-5 rounded-2xl transition-all duration-500 hover:scale-[1.02] shadow-2xl shadow-cyan-500/25 hover:shadow-cyan-500/40 overflow-hidden font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-pink-600 rounded-2xl blur opacity-0 group-hover:opacity-50 transition-opacity duration-500 -z-10"></div>
+                  <span className="relative z-10 flex items-center gap-3">
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
+                        Send Message
+                        <svg className="w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </>
+                    )}
+                  </span>
+                </button>
+              </form>
+              
+              {/* Decorative Elements */}
+              <div className="absolute top-6 right-6 w-20 h-20 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full blur-xl animate-pulse"></div>
+              <div className="absolute bottom-6 left-6 w-16 h-16 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }}></div>
             </div>
           </div>
         </div>
@@ -771,16 +1832,16 @@ const Portfolio = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {[
                 {
-                  href: "mailto:fayaz.dev@example.com",
+                  href: "fayazfai987@gmail.com",
                   icon: Mail,
                   title: "Email",
-                  subtitle: "fayaz.dev@example.com",
+                  subtitle: "For queries ",
                   gradient: "from-red-500 to-pink-500",
                   shadow: "shadow-red-500/25",
                   hoverShadow: "hover:shadow-[0_0_50px_rgba(239,68,68,0.4)]"
                 },
                 {
-                  href: "https://linkedin.com/in/fayaz-username",
+                  href: "https://www.linkedin.com/in/fayaz024",
                   icon: Linkedin,
                   title: "LinkedIn",
                   subtitle: "Professional Network",
@@ -789,7 +1850,7 @@ const Portfolio = () => {
                   hoverShadow: "hover:shadow-[0_0_50px_rgba(59,130,246,0.4)]"
                 },
                 {
-                  href: "https://github.com/fayaz-username",
+                  href: "https://github.com/Fayaz-24",
                   icon: Github,
                   title: "GitHub",
                   subtitle: "Code Repository",
@@ -798,7 +1859,7 @@ const Portfolio = () => {
                   hoverShadow: "hover:shadow-[0_0_50px_rgba(107,114,128,0.4)]"
                 },
                 {
-                  href: "https://instagram.com/fayaz-username",
+                  href: "https://instagram.com/fayaz_crush._",
                   icon: Instagram,
                   title: "Instagram",
                   subtitle: "Creative Journey",
@@ -912,10 +1973,10 @@ const Portfolio = () => {
             </p>
             <div className="flex justify-center gap-6 mb-6">
               {[
-                { icon: Github, href: "https://github.com/fayaz-username", label: "GitHub" },
-                { icon: Linkedin, href: "https://linkedin.com/in/fayaz-username", label: "LinkedIn" },
-                { icon: Instagram, href: "https://instagram.com/fayaz-username", label: "Instagram" },
-                { icon: Mail, href: "mailto:fayaz.dev@example.com", label: "Email" }
+                { icon: Github, href: "https://github.com/Fayaz-24", label: "GitHub" },
+                { icon: Linkedin, href: "https://www.linkedin.com/in/fayaz024", label: "LinkedIn" },
+                { icon: Instagram, href: "https://instagram.com/fayaz_crush._", label: "Instagram" },
+                { icon: Mail, href: "fayazfai987@gmail.com", label: "Email" }
               ].map((social, index) => (
                 <a
                   key={index}
@@ -934,35 +1995,7 @@ const Portfolio = () => {
         </div>
       </footer>
 
-      {/* Custom CSS Animations */}
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(180deg); }
-        }
-        
-        @keyframes scan {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100vh); }
-        }
-        
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        
-        .animate-scan {
-          animation: scan 4s linear infinite;
-        }
-        
-        .animate-spin-slow {
-          animation: spin 20s linear infinite;
-        }
-      `}</style>
+
     </div>
   );
 };
