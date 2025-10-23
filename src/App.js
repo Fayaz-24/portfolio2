@@ -979,15 +979,15 @@ const handleSubmit = async (e) => {
   
 };
 
-  const skills = [
+const skills = [
     { name: 'React', level: 95, color: 'from-cyan-400 to-blue-500', neon: 'shadow-[0_0_30px_rgba(6,182,212,0.5)]' },
     { name: 'JavaScript (ES6+)', level: 92, color: 'from-yellow-400 to-orange-500', neon: 'shadow-[0_0_30px_rgba(251,191,36,0.5)]' },
-    { name: 'TypeScript', level: 88, color: 'from-blue-400 to-indigo-600', neon: 'shadow-[0_0_30px_rgba(59,130,246,0.5)]' },
-    { name: 'Node.js & Express', level: 90, color: 'from-green-400 to-emerald-600', neon: 'shadow-[0_0_30px_rgba(34,197,94,0.5)]' },
-    { name: 'MongoDB & Mongoose', level: 87, color: 'from-emerald-400 to-teal-600', neon: 'shadow-[0_0_30px_rgba(16,185,129,0.5)]' },
-    { name: 'Next.js & SSR', level: 85, color: 'from-slate-400 to-gray-600', neon: 'shadow-[0_0_30px_rgba(148,163,184,0.5)]' },
-    { name: 'Redux Toolkit & Zustand', level: 83, color: 'from-purple-400 to-pink-500', neon: 'shadow-[0_0_30px_rgba(168,85,247,0.5)]' },
-    { name: 'Socket.io & WebRTC', level: 80, color: 'from-rose-400 to-red-500', neon: 'shadow-[0_0_30px_rgba(244,63,94,0.5)]' }
+    { name: 'Html & Css', level: 88, color: 'from-blue-400 to-indigo-600', neon: 'shadow-[0_0_30px_rgba(59,130,246,0.5)]' },
+    { name: 'Node.js & Firebase', level: 90, color: 'from-green-400 to-emerald-600', neon: 'shadow-[0_0_30px_rgba(34,197,94,0.5)]' },
+    { name: 'Git & Github', level: 87, color: 'from-emerald-400 to-teal-600', neon: 'shadow-[0_0_30px_rgba(16,185,129,0.5)]' },
+    { name: 'Tailwind Css', level: 85, color: 'from-slate-400 to-gray-600', neon: 'shadow-[0_0_30px_rgba(148,163,184,0.5)]' },
+    { name: 'Python', level: 83, color: 'from-purple-400 to-pink-500', neon: 'shadow-[0_0_30px_rgba(168,85,247,0.5)]' },
+    { name: 'Data & analytical', level: 80, color: 'from-rose-400 to-red-500', neon: 'shadow-[0_0_30px_rgba(244,63,94,0.5)]' }
   ];
 
       const projects = [
@@ -1578,12 +1578,12 @@ const handleSubmit = async (e) => {
                   <h3 className="text-2xl font-bold mb-6 text-blue-300 relative z-10">Core Competencies</h3>
                   <div className="space-y-3 relative z-10">
                     {[
-                      'Full Stack Architecture',
-                      'RESTful API Development',
-                      'Database Design (MongoDB)',
-                      'Authentication & Authorization',
+                       'Web Development & Programming',
+                      'Data Analysis & Problem Solving',
+                      'UI/UX Design',
+                      'Digital Marketing & SEO Basics',
                       'Real-time Applications',
-                      'Cloud Deployment & DevOps'
+                      'Project Management & Collaborations'
                     ].map((skill, index) => (
                       <div key={index} className="flex items-center gap-3 group hover:translate-x-2 transition-transform duration-300">
                         <div className="w-2 h-2 bg-blue-400 rounded-full group-hover:animate-ping"></div>
@@ -1612,10 +1612,10 @@ const handleSubmit = async (e) => {
                     {[
                       'VS Code & Extensions',
                       'Git & GitHub Advanced',
-                      'Docker & Kubernetes',
-                      'AWS & Cloud Services',
-                      'Testing Frameworks',
-                      'CI/CD Pipelines'
+                      'Figma',
+                      'Netlify / Vercel',
+                      'Firebase & Supabase',
+                      'Canva & Capcut'
                     ].map((tool, index) => (
                       <div key={index} className="flex items-center gap-3 group hover:translate-x-2 transition-transform duration-300">
                         <div className="w-2 h-2 bg-green-400 rounded-full group-hover:animate-ping"></div>
