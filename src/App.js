@@ -1988,9 +1988,13 @@ const skills = [
                 </a>
               ))}
             </div>
-            <p className={`text-sm ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-              © 2024 Fayaz. Crafted with ?? and lots of ?
-            </p>
+            <p
+  className={`text-sm text-gray-500 text-center`}
+>
+  © 2025 Fayaz. All rights reserved. Crafted with{' '}
+  <span className="text-red-500 animate-pulse">❤️</span> and creativity.
+</p>
+
           </div>
         </div>
       </footer>
