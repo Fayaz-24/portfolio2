@@ -1496,9 +1496,9 @@ const skills = [
                   </h3>
                   <div className="space-y-6">
                     {[
-                      { icon: Code, title: '4+ Years', subtitle: 'MERN Experience', color: 'text-cyan-400', bg: 'bg-cyan-500/20' },
-                      { icon: Monitor, title: '50+ Projects', subtitle: 'Completed', color: 'text-purple-400', bg: 'bg-purple-500/20' },
-                      { icon: Smartphone, title: 'Full-Stack', subtitle: 'Expertise', color: 'text-pink-400', bg: 'bg-pink-500/20' }
+                      { icon: Code, title: '1 Years', subtitle: 'MERN Experience', color: 'text-cyan-400', bg: 'bg-cyan-500/20' },
+                      { icon: Monitor, title: '10+ Projects', subtitle: 'Completed', color: 'text-purple-400', bg: 'bg-purple-500/20' },
+                      { icon: Smartphone, title: 'Mern Stack & Digital Marketing', subtitle: 'Expertise', color: 'text-pink-400', bg: 'bg-pink-500/20' }
                     ].map((fact, index) => (
                       <div key={index} className="flex items-center gap-4 group hover:scale-105 transition-all duration-300 p-3 rounded-xl hover:bg-white/5">
                         <div className={`p-3 rounded-full ${fact.bg} backdrop-blur-sm ${fact.color} group-hover:animate-pulse border border-current/30`}>
